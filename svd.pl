@@ -32,7 +32,7 @@ open LIKED, $fname or die "Cannot open " . $fname;
 my $max_v = 0;
 my $total = 0;
 while (<LIKED>) {
-	if (/([0-9]*)\t([0-9]*)\t([\-0-9]*)/) {
+	if (/([0-9]*);([0-9]*);([\-0-9]*)/) {
 		$l{$1}{$2} = $3;
 		if ($2 > $max_v) { $max_v = $2; }
 		++$total;
