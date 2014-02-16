@@ -41,18 +41,27 @@ while (<LIKED>) {
 close LIKED;
 my $max_u = keys(%l);
 $max_v++;
+
+
 print "Read " . $max_u . " users and " . $max_v . " urls.\n";
 
 # инициализируем 
 my $mu = 0;
 my @b_u = ((0) x $max_u);
 my @b_v = ((0) x $max_v);
+
+
+
 my @u_f;
 for (my $u=0; $u<$max_u; ++$u) {
 	for (my $f=0; $f < $features; ++$f) {
 		push @{ $u_f[$u] }, 0.1;
 	}
+
 }
+ 
+
+
 my @v_f;
 for (my $v=0; $v<$max_v; ++$v) {
 	for (my $f=0; $f < $features; ++$f) {
@@ -73,9 +82,13 @@ while (abs($old_rmse - $rmse) > 0.00001 ) {
 	foreach my $u ( keys %l ) {
 		foreach my $v ( keys %{$l{$u}} ) {
 			# ошибка
+			my $tmp0 = dot($u_f[$u], $v_f[$v]);
 			$err = $l{$u}{$v} - ($mu + $b_u[$u] + $b_v[$v] + dot($u_f[$u], $v_f[$v]) );
+			
+
 			# квадрат ошибки
 			$rmse += $err * $err;
+
 			# применяем правила апдейта для базовых предикторов
 			$mu += $eta * $err;
 			$b_u[$u] += $eta * ($err - $lambda2 * $b_u[$u]);
@@ -90,7 +103,7 @@ while (abs($old_rmse - $rmse) > 0.00001 ) {
 	++$iter_no;
 	# нормируем суммарную ошибку, чтобы получить RMSE
 	$rmse = sqrt($rmse / $total);
-	print "Iteration $iter_no:\tRMSE=" . $rmse . "\n";
+	print "Iteration $iter_no RMSE=" . $rmse . "\n";
 	# если RMSE меняется мало, нужно уменьшить скорость обучения
 	if ($rmse > $old_rmse - $threshold) {
 		$eta = $eta * 0.66;
@@ -125,5 +138,5 @@ sub print_all {
 }
 
 print_all();
-
-
+my $tmp = $mu  + $b_u['0'] + $b_v['0'] + ($u_f['0']['0'])*($v_f['0']['0']) + ($u_f['0']['1'])*($v_f['0']['1']);
+print "MAIN :$tmp\n";
