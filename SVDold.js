@@ -1,34 +1,56 @@
-var fs = require('fs');
-
-
-/*
-SVDModel = function function_name(arParams) {
-  this.baseDSFile = 'u1.base';
-  this.testDSFile = 'u1.test';
-
-  this.lambda = 0.2;
-  this.eta = 0.1;
-  this.features = 2;
-
-  this.file = [];
-  this.l = [];
-
-  if ('object' == typeof(arParams)) {
-    this.baseDSFile = arParams.baseDSFile;
-    this.testDSFile = arParams.testDSFile;
-  }
-
-}
-*/
-
-
-var baseDataSetFile = 'u1.base';
-var testDataSetFile = "u1.test";
-
-var lambda = 0.2;
+var lambda1 = 0.0;
+var lambda2 = 0.0;
 var eta = 0.1;
-var features = 10;
-var file = [];
+var features = 2;
+var file = [
+  [0, 1, 3],
+  [0, 2, 4],
+  [0, 3, 5],
+  [0, 4, 2],
+  [1, 0, 3],
+  [1, 1, 5],
+  [1, 2, 2],
+  [1, 3, 2],
+  [1, 4, 5],
+  [2, 0, 5],
+  [2, 1, 3],
+  [2, 3, 4],
+  [2, 4, 3],
+  [3, 0, 5],
+  [3, 1, 5],
+  [3, 2, 5],
+  [3, 4, 4],
+  [4, 0, 2],
+  [4, 1, 3],
+  [4, 3, 2],
+  [4, 4, 2]
+];
+
+var file = [
+  [4, 4, 2],
+  [4, 1, 3],
+  [4, 3, 2],
+  [4, 0, 2],
+  [1, 4, 5],
+  [1, 1, 5],
+  [1, 3, 2],
+  [1, 0, 3],
+  [1, 2, 2],
+  [3, 4, 4],
+  [3, 1, 5],
+  [3, 0, 5],
+  [3, 2, 5],
+  [0, 4, 2],
+  [0, 1, 3],
+  [0, 3, 5],
+  [0, 2, 4],
+  [2, 4, 3],
+  [2, 1, 3],
+  [2, 3, 4],
+  [2, 0, 5]
+];
+
+
 var l = {};
 
 function dot(v1, v2) {
@@ -38,18 +60,6 @@ function dot(v1, v2) {
   }
   return res;
 }
-
-
-var fileData = fs.readFileSync(baseDataSetFile, {
-  encoding: 'utf-8'
-});
-var myRe = /([0-9]*)\t([0-9]*)\t([0-9]*)\t([0-9]*)/g;
-while ((myArray = myRe.exec(fileData)) != null) {
-  file.push([(myArray[1] - 1), (myArray[2] - 1), myArray[3]])
-}
-
-
-
 
 var max_v = 0;
 var max_u = 0;
@@ -67,6 +77,7 @@ for (var i = 0, length = file.length; i < length; i++) {
 
   total++;
 };
+
 max_u++;
 max_v++;
 
@@ -76,11 +87,9 @@ console.log('Read ' + max_u + ' users and ' + max_v + ' items') //TODO chek
 
 // инициализируем 
 var mu = 0;
-
 var b_u = {};
 for (var u = 0; u < max_u; u++)
   b_u['u' + u] = 0;
-
 var b_v = {};
 for (var v = 0; v < max_v; v++)
   b_v['v' + v] = 0;
@@ -123,34 +132,26 @@ while (Math.abs(old_rmse - rmse) > 0.00001) {
   for (var u in l) {
     for (var v in l[u]) {
       // ошибка
-
       err = l[u][v] - (mu + b_u[u] + b_v[v] + dot(u_f[u], v_f[v]));
       rmse = rmse + Math.pow(err, 2)
 
-
       // применяем правила апдейта для базовых предикторов
       mu = mu + (eta * err);
-      b_u[u] = b_u[u] + (eta * (err - lambda * b_u[u]));
-      b_v[v] = b_v[v] + (eta * (err - lambda * b_v[v]));
+      b_u[u] = b_u[u] + (eta * (err - lambda2 * b_u[u]));
+      b_v[v] = b_v[v] + (eta * (err - lambda2 * b_v[v]));
 
-      //применяем правила апдейта для векторов признаков
+      //и для векторов признаков
       for (var f = 0; f < features; f++) {
-        u_f[u][f] = u_f[u][f] + (eta * (err * v_f[v][f] - lambda * u_f[u][f]));
-        v_f[v][f] = v_f[v][f] + (eta * (err * u_f[u][f] - lambda * v_f[v][f]));
+        u_f[u][f] = u_f[u][f] + (eta * (err * v_f[v][f] - lambda2 * u_f[u][f]));
+        v_f[v][f] = v_f[v][f] + (eta * (err * u_f[u][f] - lambda2 * v_f[v][f]));
       };
     }
-    //console.log("v_f[v285] " + v_f["v285"])
   }
-
   iter_no++;
 
   // нормируем суммарную ошибку, чтобы получить RMSE
-
   rmse = Math.sqrt(rmse / total);
-  if (isNaN(rmse)) {
-    throw 'rmse NaN';
-  }
-  console.log('Iteration ' + iter_no + ' RMSE ' + rmse)
+  //console.log('Iteration ' + iter_no + ' RMSE ' + rmse)
   if (rmse > old_rmse - threshold) {
     eta = eta * 0.66;
     threshold = threshold * 0.5;
@@ -159,7 +160,7 @@ while (Math.abs(old_rmse - rmse) > 0.00001) {
 }
 
 
-/*
+
 console.dir('mu ' + mu);
 console.dir('User base ');
 console.dir(b_u);
@@ -174,28 +175,6 @@ console.dir('Item features')
 for (var v in v_f) {
   console.log('  item ' + v + ': ' + v_f[v]);
 };
-*/
 
-var SVD;
-var T = 0;
-var E_SVD = 0;
-var fileData = fs.readFileSync(testDataSetFile, {
-  encoding: 'utf-8'
-});
-var myRe = /([0-9]*)\t([0-9]*)\t([0-9]*)\t([0-9]*)/g;
-while ((myArray = myRe.exec(fileData)) != null) {
-
-  u = myArray[1] - 1;
-  i = myArray[2] - 1;
-  tmpR = myArray[3];
-  T++;
-
-  SVD = mu + b_u['u' + u] + b_v['v' + i] + dot(u_f['u' + u], v_f['v' + i]);
-  E_SVD += Math.pow((SVD - tmpR), 2)
-
-  RMSE_SVD = Math.sqrt(E_SVD / T);
-  console.log("SVD:(" + SVD.toFixed(2) + ") " + RMSE_SVD.toFixed(4) + " U:" + u + " I:" + i + " R:" + tmpR)
-
-}
-
-console.log("ALL")
+tmp = mu + b_u['u0'] + b_v['v0'] + (u_f['u0']['0']) * (v_f['v0']['0']) + (u_f['u0']['1']) * (v_f['v0']['1']);
+console.log(tmp)

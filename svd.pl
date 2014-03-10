@@ -82,10 +82,7 @@ while (abs($old_rmse - $rmse) > 0.00001 ) {
 	foreach my $u ( keys %l ) {
 		foreach my $v ( keys %{$l{$u}} ) {
 			# ошибка
-			my $tmp0 = dot($u_f[$u], $v_f[$v]);
 			$err = $l{$u}{$v} - ($mu + $b_u[$u] + $b_v[$v] + dot($u_f[$u], $v_f[$v]) );
-			
-
 			# квадрат ошибки
 			$rmse += $err * $err;
 
