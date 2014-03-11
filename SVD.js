@@ -3,6 +3,8 @@ var fs = require('fs');
 
 
 SVDModel = function(arParams) {
+  this.debug = false;
+
   this.dataSetBase = [];
   this.dataSetMatrix = {};
 
@@ -28,9 +30,14 @@ SVDModel = function(arParams) {
   this.threshold = 0.01;
 
   if ('object' == typeof(arParams)) {
+    if (arParams.debug) {
+      this.debug = arParams.debug;
+    }
+
     if (arParams.lambda) {
       this.lambda = arParams.lambda;
     }
+
     if (arParams.features) {
       this.features = arParams.features;
     }
@@ -60,7 +67,8 @@ SVDModel.prototype.Init = function() {
     this.ratingCount++
   };
 
-  console.log('Read ' + this.maxUserIndex + ' users and ' + this.maxItemIndex + ' items')
+  if (this.debug)
+    console.log('Read ' + this.maxUserIndex + ' users and ' + this.maxItemIndex + ' items')
 
   for (var u = 1; u <= this.maxUserIndex; u++) {
     this.usersBasePredictor[u] = 0;
@@ -93,13 +101,12 @@ SVDModel.prototype.Init = function() {
         this.error = this.dataSetMatrix[u][i] - (this.mu + this.usersBasePredictor[u] + this.itemsBasePredictor[i] + this.Dot(u, i));
         this.rmse = this.rmse + Math.pow(this.error, 2)
 
-
         // применяем правила апдейта для базовых предикторов
         this.mu = this.mu + (this.eta * this.error);
         this.usersBasePredictor[u] = this.usersBasePredictor[u] + (this.eta * (this.error - this.lambda * this.usersBasePredictor[u]));
         this.itemsBasePredictor[i] = this.itemsBasePredictor[i] + (this.eta * (this.error - this.lambda * this.itemsBasePredictor[i]));
 
-        //применяем правила апдейта для векторов признаков
+        // применяем правила апдейта для векторов признаков
         for (var f = 0; f < this.features; f++) {
           this.usersFeatureVectors[u][f] = this.usersFeatureVectors[u][f] + (this.eta * (this.error * this.itemsFeatureVectors[i][f] - this.lambda * this.usersFeatureVectors[u][f]));
           this.itemsFeatureVectors[i][f] = this.itemsFeatureVectors[i][f] + (this.eta * (this.error * this.usersFeatureVectors[u][f] - this.lambda * this.itemsFeatureVectors[i][f]));
@@ -107,19 +114,18 @@ SVDModel.prototype.Init = function() {
       }
     }
 
-    this.iterationNumber++;
 
     // нормируем суммарную ошибку, чтобы получить rmse
     this.rmse = Math.sqrt(this.rmse / this.ratingCount);
-    if (isNaN(this.rmse)) {
-      throw 'RMSE NaN';
-    }
-    console.log('Iteration ' + this.iterationNumber + ' RMSE ' + this.rmse)
+
+    // если RMSE меняется мало, нужно уменьшить скорость обучения
     if (this.rmse > this.rmseOld - this.threshold) {
       this.eta = this.eta * 0.66;
       this.threshold = this.threshold * 0.5;
     }
 
+    if (this.debug)
+      console.log('Iteration ' + this.iterationNumber+++' RMSE ' + this.rmse)
   }
 }
 
@@ -141,7 +147,7 @@ SVDModel.prototype.Dot = function(u, i) {
 // get base data
 var dataSet = [];
 var user, item, rating;
-var fileData = fs.readFileSync('u1.base', {
+var fileData = fs.readFileSync('ds/u4.base', {
   encoding: 'utf-8'
 });
 var myRe = /([0-9]*)\t([0-9]*)\t([0-9]*)\t([0-9]*)/g;
@@ -154,7 +160,7 @@ while ((myArray = myRe.exec(fileData)) != null) {
 
 // get test data
 var dataSetTest = [];
-var fileData = fs.readFileSync('u1.test', {
+var fileData = fs.readFileSync('ds/u4.test', {
   encoding: 'utf-8'
 });
 var myRe = /([0-9]*)\t([0-9]*)\t([0-9]*)\t([0-9]*)/g;
@@ -172,8 +178,9 @@ while ((myArray = myRe.exec(fileData)) != null) {
 // init SVDModel
 var SVDModelObject = new SVDModel({
   dataSetBase: dataSet,
-  lambda: 0.1,
-  features: 2
+  lambda: 0.098,
+  features: 15,
+  debug: true
 });
 
 // get RMSE
@@ -188,7 +195,5 @@ for (var i = dataSetTest.length - 1; i >= 0; i--) {
   SVD = SVDModelObject.mu + SVDModelObject.usersBasePredictor[user] + SVDModelObject.itemsBasePredictor[item] + SVDModelObject.Dot(user, item);
   E_SVD += Math.pow((SVD - rating), 2)
   RMSE_SVD = Math.sqrt(E_SVD / T);
-  console.log("SVD:(" + SVD.toFixed(2) + ") " + RMSE_SVD.toFixed(4) + " U:" + user + " I:" + item + " R:" + rating)
+  console.log("SVD:(" + SVD.toFixed(2) + ") " + RMSE_SVD.toFixed(4) + " U:" + user + " I:" + item + " R:" + rating + " E:" + (rating - SVD.toFixed(2)).toFixed(2))
 };
-
-console.log("ALL")
